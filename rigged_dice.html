@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Catan Dice Roll Tester</title>
+  <!-- Include jStat from a CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.6/jstat.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 600px;
+    }
+    h1, h2 {
+      margin-bottom: 0.5em;
+    }
+    .dice-input {
+      display: flex;
+      margin-bottom: 0.5em;
+      align-items: center;
+    }
+    .dice-input label {
+      width: 40px;
+    }
+    .dice-input input {
+      width: 70px;
+      margin-left: 10px;
+    }
+    #results {
+      margin-top: 1em;
+      padding: 10px;
+      background-color: #f4f4f4;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 1em;
+      cursor: pointer;
+      padding: 8px 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Catan Dice Rigged Check</h1>
+  <p>Enter the number of occurrences (observed counts) for each dice sum (2 to 12), then click "Check Dice!".</p>
+
+  <!-- Input fields for sums 2 through 12 -->
+  <div class="dice-input">
+    <label for="sum2">2</label>
+    <input type="number" id="sum2" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum3">3</label>
+    <input type="number" id="sum3" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum4">4</label>
+    <input type="number" id="sum4" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum5">5</label>
+    <input type="number" id="sum5" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum6">6</label>
+    <input type="number" id="sum6" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum7">7</label>
+    <input type="number" id="sum7" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum8">8</label>
+    <input type="number" id="sum8" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum9">9</label>
+    <input type="number" id="sum9" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum10">10</label>
+    <input type="number" id="sum10" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum11">11</label>
+    <input type="number" id="sum11" value="0" />
+  </div>
+  <div class="dice-input">
+    <label for="sum12">12</label>
+    <input type="number" id="sum12" value="0" />
+  </div>
+
+  <button onclick="checkDice()">Check Dice!</button>
+
+  <div id="results">
+    <h2>Results</h2>
+    <p id="chi-square">Chi-Squared Statistic: N/A</p>
+    <p id="p-value">P-value: N/A</p>
+    <p id="interpretation"></p>
+  </div>
+
+  <script>
+    function checkDice() {
+      // Read user input for sums 2..12
+      const sums = [];
+      for (let s = 2; s <= 12; s++) {
+        const value = parseInt(document.getElementById("sum" + s).value, 10);
+        sums.push(value);
+      }
+      
+      // Observed array
+      const observed = sums;
+      // Expected probabilities for sums 2..12 (two 6-sided dice)
+      const expectedProbs = [
+        1/36, 2/36, 3/36, 4/36, 5/36, 6/36,
+        5/36, 4/36, 3/36, 2/36, 1/36
+      ];
+      
+      // Total rolls
+      const totalRolls = observed.reduce((acc, val) => acc + val, 0);
+      
+      // Build expected counts
+      const expected = expectedProbs.map(p => p * totalRolls);
+      
+      // Compute Chi-Squared
+      let chiSquared = 0;
+      for (let i = 0; i < observed.length; i++) {
+        const O = observed[i];
+        const E = expected[i] || 0;
+        if (E > 0) {
+          chiSquared += (O - E) * (O - E) / E;
+        }
+      }
+      
+      // Degrees of freedom for 11 bins = 11 - 1 = 10
+      const df = 10;
+      
+      // Use jStat for the survival function (1 - CDF)
+      // pValue = 1 - cdf(chiSquared, df)
+      const pValue = 1 - jStat.chisquare.cdf(chiSquared, df);
+      
+      // Update the UI
+      document.getElementById("chi-square").textContent = 
+        "Chi-Squared Statistic: " + chiSquared.toFixed(2);
+      document.getElementById("p-value").textContent = 
+        "P-value: " + pValue.toFixed(4);
+      
+      // Simple interpretation
+      let interpretationText = "";
+      if (pValue < 0.05) {
+        interpretationText = "The p-value is less than 0.05. The dice may be biased.";
+      } else {
+        interpretationText = "The p-value is greater than 0.05. There's no strong evidence the dice are rigged.";
+      }
+      
+      document.getElementById("interpretation").textContent = interpretationText;
+    }
+  </script>
+</body>
+</html>
